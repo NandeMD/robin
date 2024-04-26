@@ -1,0 +1,17 @@
+[package]
+name = "robin_core"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.81"
+async-trait = "0.1.79"
+reqwest = { version = "0.12.3", features = ["cookies", "gzip", "brotli", "deflate", "json"] }
+scraper = "0.19.0"
+tokio = { version = "1.37.0", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+futures = "0.3.30"
+tempfile = "3.10.1"

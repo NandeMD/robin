@@ -1,0 +1,35 @@
+[workspace]
+resolver = "2"
+members = [
+    "robin_core",
+    "robin_cli"
+]
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+strip = true
+panic = "abort"
+
+[profile.release.package."*"]
+opt-level = 3
+incremental = false
+codegen-units = 1
+strip = true
+
+
+[profile.release-opt2]
+inherits = "release"
+opt-level = 2
+
+[profile.release-opt1]
+inherits = "release"
+opt-level = 1
+
+[profile.release-opts]
+inherits = "release"
+opt-level = "s"
+
+[profile.release-optz]
+inherits = "release"
+opt-level = "z"
