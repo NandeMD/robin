@@ -71,12 +71,40 @@ impl Serie for ShijieTurkish {
         }
     }
 
+    async fn get_cover(&self) -> anyhow::Result<(String, Vec<u8>)> {
+        let cover_selector = Selector::parse(".attachment-").unwrap();
+        let cover_url = self.data.select(&cover_selector)
+            .next()
+            .unwrap()
+            .attr("src")
+            .unwrap();
+        let cover_url_ext = cover_url.split(".").last().unwrap();
+
+        let cover_response = self.client.get(cover_url).send().await?;
+        let cover_bytes = cover_response.bytes().await?;
+
+        Ok((cover_url_ext.to_string(), cover_bytes.into()))
+    }
+
     async fn download(&mut self, n_sim: usize) -> anyhow::Result<TempDir> {
         let tmpdir = tempdir()?;
         let tmp_path = tmpdir.path();
+        println!("Temporary directory created to: {}", &tmp_path.display());
+
         let client = &self.client;
         let chapter_count = self.chapter_count();
         let current_chapter = Arc::new(Mutex::new(0));
+
+        // Download cover image and save it to the temporary directory
+        let cover_data = self.get_cover().await?;
+        let cover_filename = format!("cover.{}", cover_data.0);
+        let mut f = File::create(tmp_path.join(cover_filename)).await?;
+        f.write_all(cover_data.1.as_ref()).await?;
+
+        // Save details to a json file
+        let details = self.details();
+        let mut f = File::create(tmp_path.join("details.json")).await?;
+        f.write_all(details.as_bytes()).await?;
 
         // The first map is to clone the current_chapter mutex.
         // There is probably better ways to do it but I'm not sure how to do it
@@ -128,27 +156,49 @@ impl Serie for ShijieTurkish {
 
     fn info(&self) -> Vec<(&str, String)> {
         // Selectors for Info
-        let name_selector = Selector::parse("h1.entry-title").unwrap();
-        let alternative_selector = Selector::parse(".entry-content > p").unwrap();
-        let tags_selector = Selector::parse(".mgen > a").unwrap();
+        let title_selector = Selector::parse("h1.entry-title").unwrap();
+        let author_selector = Selector::parse("div.flex-wrap:nth-child(4) > div:nth-child(2) > span:nth-child(2)").unwrap();
+        let artist_selector = author_selector.clone();
+        let description_selector = Selector::parse(".entry-content > p").unwrap();
+        let genres_selector = Selector::parse(".mgen > a").unwrap();
         let first_chapter_selector = Selector::parse(".epcurfirst").unwrap();
         let last_chapter_selector = Selector::parse(".epcurlast").unwrap();
+        let status_selector = Selector::parse("div.imptdt:nth-child(1) > i:nth-child(1)").unwrap();
 
-        let name: String = self.data.select(&name_selector)
+        let title: String = self.data.select(&title_selector)
             .next()
             .unwrap()
             .text()
             .collect();
 
-        let alternative_holder = self.data.select(&alternative_selector).next();
-        let mut alternative: String = String::new();
+        let author: String = self.data.select(&author_selector)
+            .next()
+            .unwrap()
+            .text()
+            .collect();
 
-        if let Some(alt) = alternative_holder {
-            alternative = alt.text().collect()
+        let artist: String = self.data.select(&artist_selector)
+            .next()
+            .unwrap()
+            .text()
+            .collect();
+
+        let description_holder = self.data.select(&description_selector).next();
+        let mut description: String = String::new();
+
+        if let Some(alt) = description_holder {
+            description = alt.text().collect::<String>().replace("\n", " ");
         };
 
-        let tags = self.data.select(&tags_selector)
-            .map(|t| { t.text().collect::<String>() })
+        let genres = self.data.select(&genres_selector)
+            .map(|t| { 
+                let tt = t.text().collect::<String>();
+                let mut buff = String::new();
+                buff.push('"');
+                buff.push_str(&tt);
+                buff.push('"');
+                buff
+             })
             .collect::<Vec<String>>()
             .join(", ");
 
@@ -164,15 +214,87 @@ impl Serie for ShijieTurkish {
             .text()
             .collect();
 
+        let status: String = self.data.select(&status_selector)
+            .next()
+            .unwrap()
+            .text()
+            .collect();
+
         let mut map:Vec<(&str, String)> = Vec::new();
-        map.push(("name", name));
-        map.push(("alt. name", alternative));
-        map.push(("categories", tags));
+        map.push(("title", title));
+        map.push(("author", author));
+        map.push(("artist", artist));
+        map.push(("description", description));
+        map.push(("genres", genres));
         map.push(("first chapter", first_chapter));
         map.push(("last chapter", last_chapter));
         map.push(("chapter count", format!("{}", self.chapter_count())));
+        map.push(("status", status));
 
         map
+    }
+
+    fn details(&self) -> String {
+        let info = self.info();
+
+        let title = info.iter()
+            .find(|inf| {
+                inf.0 == "title"
+            })
+            .unwrap()
+            .1.clone();
+        let author = info.iter()
+            .find(|inf| {
+                inf.0 == "author"
+            })
+            .unwrap()
+            .1.trim();
+        let artist = info.iter()
+            .find(|inf| {
+                inf.0 == "artist"
+            })
+            .unwrap()
+            .1.trim();
+        let description = info.iter()
+            .find(|inf| {
+                inf.0 == "description"
+            })
+            .unwrap()
+            .1.trim();
+        let genres = info.iter()
+            .find(|inf| {
+                inf.0 == "genres"
+            })
+            .unwrap()
+            .1.clone();
+        let status_holder = info.iter()
+            .find(|inf| {
+                inf.0 == "status"
+            })
+            .unwrap()
+            .1.clone();
+        let status = match status_holder.as_str() {
+            "Devam Ediyor" => "1",
+            "Final" => "2",
+            "Sezon Finali" | "Askıda" => "6",
+            _ => "0"
+        };
+        format!(r#"
+        {{
+            "title": "{}",
+            "author": "{}",
+            "artist": "{}",
+            "description": "{}",
+            "genre": [{}],
+            "status": "{}"
+        }}
+        "#,
+        title, 
+        author,
+        artist,
+        description,
+        genres,
+        status)
     }
 
     fn format_info(&self, info: &Vec<(&str, String)>) -> String {
