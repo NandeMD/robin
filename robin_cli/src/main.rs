@@ -18,7 +18,7 @@ async fn main() -> anyhow::Result<()> {
     let app = App::parse();
 
     match &app.command {
-        Commands::Manga { tachiyomi, url } => {
+        Commands::Manga { compress, url } => {
             let url = url;
             let mut source = match_manga(url.clone()).await?;
             source.find_chapters().await;
@@ -32,12 +32,11 @@ async fn main() -> anyhow::Result<()> {
                     uwu.1.clone()
                 })
                 .unwrap();
+            
             println!("Found manga!\n\n{}\n\nStarting download!", source.format_info(&info));
-
             let temp = source.download(app.concurrent_chapters).await?;
-            println!("Temporary directory created to: {}", temp.path().display());
 
-            match tachiyomi {
+            match compress {
                 true => {
                     let output_folder = PathBuf::from(&app.output_folder);
                     let destination = output_folder.join(format!("{}.zip", manga_name));
@@ -50,9 +49,14 @@ async fn main() -> anyhow::Result<()> {
                         .compression_level(Some(9))
                         .large_file(true);
 
-                    for ent in walkdir::WalkDir::new(temp).into_iter().filter_map(|e| e.ok()){
-                        let mut entry_file = File::open(ent.path())?;
-                        let entry_file_name = ent.path();
+                    for ent in walkdir::WalkDir::new(&temp.path())
+                        .into_iter()
+                        .filter_map(|e| e.ok())
+                        .filter(|e| {e.file_type().is_file()})
+                    {
+                        let mut entry_file = File::open(&ent.path())?;
+                        let entry_file_name = ent.path().strip_prefix(&temp.path())?;
+
                         println!("compressing: {}", entry_file_name.display());
 
                         zipper.start_file(entry_file_name.to_str().unwrap(), zip_options)?;
@@ -65,6 +69,8 @@ async fn main() -> anyhow::Result<()> {
 
                     zipper.finish()?;
 
+                    println!("Done!");
+
                 },
                 false => {
                     let output_folder = PathBuf::from(&app.output_folder);
@@ -74,8 +80,6 @@ async fn main() -> anyhow::Result<()> {
 
                     create_dir_all(&destination)?;
                     copy_dir_all(&temp, destination)?;
-
-                    drop(temp);
                 }
             }
         }
