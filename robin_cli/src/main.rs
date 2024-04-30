@@ -6,6 +6,7 @@ use clap::Parser;
 use zip::{ZipWriter, CompressionMethod, write::FileOptions};
 use robin_core::sources::Serie;
 use robin_core::matcher::match_manga;
+use robin_core::utils::create_progress_bar;
 
 mod args;
 use args::{App, Commands};
@@ -26,7 +27,7 @@ async fn main() -> anyhow::Result<()> {
             let info = source.info().clone();
             let manga_name = info.iter()
                 .find(|inf| {
-                    inf.0 == "name"
+                    inf.0 == "title"
                 })
                 .map(|uwu| {
                     uwu.1.clone()
@@ -35,6 +36,8 @@ async fn main() -> anyhow::Result<()> {
             
             println!("Found manga!\n\n{}\n\nStarting download!", source.format_info(&info));
             let temp = source.download(app.concurrent_chapters).await?;
+
+            let mut pbar = create_progress_bar(source.chapter_count() as u64, "Adding files: ");
 
             match compress {
                 true => {
@@ -57,20 +60,21 @@ async fn main() -> anyhow::Result<()> {
                         let mut entry_file = File::open(&ent.path())?;
                         let entry_file_name = ent.path().strip_prefix(&temp.path())?;
 
-                        println!("compressing: {}", entry_file_name.display());
-
                         zipper.start_file(entry_file_name.to_str().unwrap(), zip_options)?;
 
                         let mut buffer: Vec<u8> = Vec::new();
                         entry_file.read_to_end(&mut buffer)?;
 
                         zipper.write_all(&buffer)?;
+
+                        pbar.inc();
                     }
+
+                    pbar.message("Compressing files...");
 
                     zipper.finish()?;
 
-                    println!("Done!");
-
+                    pbar.finish_print("Compressed!");
                 },
                 false => {
                     let output_folder = PathBuf::from(&app.output_folder);

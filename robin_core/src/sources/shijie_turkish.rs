@@ -2,7 +2,7 @@ use super::*;
 use futures::StreamExt;
 use reqwest::{Client, ClientBuilder};
 use scraper::{selectable::Selectable, Html, Selector};
-use crate::utils::capitalize;
+use crate::utils::{capitalize, create_progress_bar};
 use std::sync::{Arc, Mutex};
 
 use tempfile::{tempdir, TempDir};
@@ -93,7 +93,7 @@ impl Serie for ShijieTurkish {
 
         let client = &self.client;
         let chapter_count = self.chapter_count();
-        let current_chapter = Arc::new(Mutex::new(0));
+        let pbar = Arc::new(Mutex::new(create_progress_bar(chapter_count as u64, "Downloading: ")));
 
         // Download cover image and save it to the temporary directory
         let cover_data = self.get_cover().await?;
@@ -111,7 +111,7 @@ impl Serie for ShijieTurkish {
         let stream = futures::stream::iter(
             self.chapters.iter_mut()
                 .map(|c| {
-                    let counter = Arc::clone(&current_chapter);
+                    let counter = Arc::clone(&pbar);
                     (c, counter)
                 })
                 .map(|(c, counter)| async move {
@@ -133,8 +133,7 @@ impl Serie for ShijieTurkish {
 
                     // Notify progress
                     let mut counter = counter.lock().unwrap();
-                    *counter += 1;
-                    println!("Downloaded {}/{} -- Remaining: {} -- %{:.2}", *counter, chapter_count, chapter_count - *counter, (*counter as f64 / chapter_count as f64) * 100.0);
+                    counter.inc();
                     drop(counter);  // Unlock Mutex (counter)
 
 
@@ -147,6 +146,8 @@ impl Serie for ShijieTurkish {
         for r in results {
             r?
         }
+
+        pbar.lock().unwrap().finish_print("Downloaded!");
         Ok(tmpdir)
     }
 
