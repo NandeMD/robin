@@ -33,6 +33,7 @@ Download the binary from [releases](https://github.com/NandeMD/robin) and use it
         # Afther the build process, you can locate robin(.exe) binary in the target/release folder.
         ```
 
+
 # Usage
 ### Example:
 ```bash
@@ -46,7 +47,12 @@ robin -o ~/Desktop -c 10 manga https://testurluwuowo.uwu
 robin -o ~/Desktop manga https://testurluwuowo.uwu --compress
 ```
 
+
 # How to add site support?
 - If you want a site added, please open an issue from [issue tracker](https://github.com/NandeMD/robin/issues).
 
 - If you want to solve an issue or contribute the code, see [CONTRIBUTING.md](https://github.com/NandeMD/robin/blob/main/CONTRIBUTING.md)
+
+
+# Supported Sites:
+See [SITES.md](https://github.com/NandeMD/robin/blob/main/SITES.md).

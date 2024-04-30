@@ -8,7 +8,9 @@
 
 4. You don't have tou use `Chapter` trait at all. It is there for only convenience.
 
-5. When you done with all of your trait implementations, add your website's definitive url to the [mathcher](https://github.com/NandeMD/robin/blob/main/robin_core/src/matcher.rs) function. All if/else if branches must return a `Ok(impl Serie)`. After that, you are done. Your serie is added to robin. Have a good time scraping.
+5. When you done with all of your trait implementations, add your website's definitive url to the [mathcher](https://github.com/NandeMD/robin/blob/main/robin_core/src/matcher.rs) function. All if/else if branches must return a `Ok(impl Serie)`. 
+
+6. Add your site to [SITES.md](https://github.com/NandeMD/robin/blob/main/SITES.md) After that, you are done. Your serie is added to robin. Have a good time scraping.
 
 ## Example:
 Although it may not be very well-written code, you can directly look into the [example](https://github.com/NandeMD/robin/blob/main/robin_core/src/sources/shijie_turkish.rs) file and even copy the parts that are useful to you.
