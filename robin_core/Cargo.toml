@@ -1,5 +1,5 @@
 [package]
-name = "robin_core"
+name = "robin_cli_core"
 version = "0.1.0"
 edition = "2021"
 description = "Core functionality for robin downloader"

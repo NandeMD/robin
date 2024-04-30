@@ -15,7 +15,7 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.82"
 clap = { version = "4.5.4", features = ["derive"] }
-robin_core = { path = "../robin_core", version = "0.1.0" }
+robin_cli_core = { path = "../robin_core", version = "0.1.0" }
 tokio = { version = "1.37.0", features = ["full"] }
 walkdir = "2.5.0"
 zip = "0.6"

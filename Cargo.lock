@@ -1438,14 +1438,14 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
- "robin_core",
+ "robin_cli_core",
  "tokio",
  "walkdir",
  "zip",
 ]
 
 [[package]]
-name = "robin_core"
+name = "robin_cli_core"
 version = "0.1.0"
 dependencies = [
  "anyhow",
