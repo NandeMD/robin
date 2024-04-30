@@ -4,9 +4,9 @@ use std::io::{Read, Write};
 
 use clap::Parser;
 use zip::{ZipWriter, CompressionMethod, write::FileOptions};
-use robin_core::sources::Serie;
-use robin_core::matcher::match_manga;
-use robin_core::utils::create_progress_bar;
+use robin_cli_core::sources::Serie;
+use robin_cli_core::matcher::match_manga;
+use robin_cli_core::utils::create_progress_bar;
 
 mod args;
 use args::{App, Commands};
