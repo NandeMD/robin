@@ -6,9 +6,6 @@ pub struct App {
     #[command(subcommand)]
     pub command: Commands,
 
-    /// URL of the source content
-    pub url: String,
-
     /// Where should downloaded serie stay huh?
     #[arg(short, long)]
     pub output_folder: String,
@@ -22,7 +19,10 @@ pub struct App {
 pub enum Commands {
     Manga {
         #[arg(short, long, default_value_t = false)]
-        tachiyomi: bool
+        tachiyomi: bool,
+
+        /// URL of the source content
+        url: String,
     }
 }
 
