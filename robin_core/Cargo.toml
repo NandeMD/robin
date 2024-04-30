@@ -2,6 +2,13 @@
 name = "robin_core"
 version = "0.1.0"
 edition = "2021"
+description = "Core functionality for robin downloader"
+authors = ["NandeMD"]
+readme = "../README.md"
+repository = "https://github.com/NandeMD/robin"
+license-file = "../LICENSE"
+keywords = ["manga", "downloader", "cli"]
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

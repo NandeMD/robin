@@ -2,9 +2,9 @@
 name = "robin_cli"
 description = "A command line tool to bulk download manga from various sources"
 authors = ["NandeMD"]
-readme = "README.md"
+readme = "../README.md"
 repository = "https://github.com/NandeMD/robin"
-license-file = "LICENSE"
+license-file = "../LICENSE"
 keywords = ["manga", "downloader", "cli"]
 categories = ["command-line-interface"]
 version = "0.1.0"
@@ -15,7 +15,7 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.82"
 clap = { version = "4.5.4", features = ["derive"] }
-robin_core ={ path = "../robin_core"}
+robin_core = { path = "../robin_core", version = "0.1.0" }
 tokio = { version = "1.37.0", features = ["full"] }
 walkdir = "2.5.0"
 zip = "0.6"
