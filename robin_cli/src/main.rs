@@ -18,9 +18,9 @@ async fn main() -> anyhow::Result<()> {
     let app = App::parse();
 
     match &app.command {
-        Commands::Manga { tachiyomi } => {
-            let url = app.url;
-            let mut source = match_manga(url).await?;
+        Commands::Manga { tachiyomi, url } => {
+            let url = url;
+            let mut source = match_manga(url.clone()).await?;
             source.find_chapters().await;
 
             let info = source.info().clone();
@@ -29,7 +29,7 @@ async fn main() -> anyhow::Result<()> {
                     inf.0 == "name"
                 })
                 .map(|uwu| {
-                    uwu.0.to_string()
+                    uwu.1.clone()
                 })
                 .unwrap();
             println!("Found manga!\n\n{}\n\nStarting download!", source.format_info(&info));

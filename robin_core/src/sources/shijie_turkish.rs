@@ -3,6 +3,7 @@ use futures::StreamExt;
 use reqwest::{Client, ClientBuilder};
 use scraper::{selectable::Selectable, Html, Selector};
 use crate::utils::capitalize;
+use std::sync::{Arc, Mutex};
 
 use tempfile::{tempdir, TempDir};
 use tokio::fs::{File, create_dir};
@@ -74,24 +75,44 @@ impl Serie for ShijieTurkish {
         let tmpdir = tempdir()?;
         let tmp_path = tmpdir.path();
         let client = &self.client;
+        let chapter_count = self.chapter_count();
+        let current_chapter = Arc::new(Mutex::new(0));
+
+        // The first map is to clone the current_chapter mutex.
+        // There is probably better ways to do it but I'm not sure how to do it
         let stream = futures::stream::iter(
-            self.chapters.iter_mut().map(|c| async move {
-                let dir_path = tmp_path.join(&c.name);
-                create_dir(&dir_path).await?;
-                
-                c.download(client).await?;
+            self.chapters.iter_mut()
+                .map(|c| {
+                    let counter = Arc::clone(&current_chapter);
+                    (c, counter)
+                })
+                .map(|(c, counter)| async move {
+                    let dir_path = tmp_path.join(&c.name);
+                    create_dir(&dir_path).await?;
+                    
+                    c.download(client).await?;
 
-                for page in &c.page_data {
-                    let filename = page.0.split("/").last().unwrap();
-                    let temp_page_path = dir_path.join(filename);
+                    for page in &c.page_data {
+                        let filename = page.0.split("/").last().unwrap();
+                        let temp_page_path = dir_path.join(filename);
 
-                    let mut f = File::create(temp_page_path).await?;
-                    f.write_all(page.1.as_ref()).await?;
-                }
+                        let mut f = File::create(temp_page_path).await?;
+                        f.write_all(page.1.as_ref()).await?;
+                    }
 
-                anyhow::Ok(())
-            })
-        ).buffered(n_sim);
+                    // Clear page data to save memory
+                    c.page_data.clear();
+
+                    // Notify progress
+                    let mut counter = counter.lock().unwrap();
+                    *counter += 1;
+                    println!("Downloaded {}/{} -- Remaining: {} -- %{:.2}", *counter, chapter_count, chapter_count - *counter, (*counter as f64 / chapter_count as f64) * 100.0);
+                    drop(counter);  // Unlock Mutex (counter)
+
+
+                    anyhow::Ok(())
+                })
+            ).buffered(n_sim);
 
         let results = stream.collect::<Vec<_>>().await;
 
@@ -186,7 +207,7 @@ impl Chapter for ShijieTurkishChapter {
 
                 p
             }))
-        .   buffered(10);
+            .buffered(10);
         
         let results = stream.collect::<Vec<_>>().await;
 
