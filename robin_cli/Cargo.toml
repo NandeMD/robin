@@ -12,3 +12,7 @@ robin_core ={ path = "../robin_core"}
 tokio = { version = "1.37.0", features = ["full"] }
 walkdir = "2.5.0"
 zip = "0.6"
+
+[[bin]]
+name = "robin"
+path = "src/main.rs"
