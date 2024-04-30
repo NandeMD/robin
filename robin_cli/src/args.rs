@@ -11,7 +11,7 @@ pub struct App {
     pub output_folder: String,
 
     /// Number of chapters that will be downloaded at the same time
-    #[arg(short, long, default_value_t = 10)]
+    #[arg(short, long, default_value_t = 3)]
     pub concurrent_chapters: usize,
 }
 
@@ -19,7 +19,7 @@ pub struct App {
 pub enum Commands {
     Manga {
         #[arg(short, long, default_value_t = false)]
-        tachiyomi: bool,
+        compress: bool,
 
         /// URL of the source content
         url: String,
