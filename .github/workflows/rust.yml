@@ -1,12 +1,14 @@
 name: Rust Build and Release
 
-on:
-  push:
-    branches:
-      - release
+permissions: write-all
 
-env:
-  VERSION: v0.1.1
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release'
+        required: true
+        default: 'v0.1.1'
 
 jobs:
   build-ubuntu:
@@ -107,12 +109,14 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ env.VERSION }}
+          tag_name: ${{ inputs.version }}
           body: "Automated builds!!! Yeey!!!"
           prerelease: true
           draft: true
           make_latest: "true"
           files: |
-            robin_ubuntu.zip
-            robin_windows.zip
-            robin_darwin.zip
+            ubuntu_release.zip
+            windows_release.zip
+            darwin_release.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.ROBIN_TOKEN }}
