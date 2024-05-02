@@ -8,6 +8,9 @@ on:
 jobs:
   build-ubuntu:
     runs-on: ubuntu-latest
+
+    outputs:
+      outout: ${{ steps.artifact-up.outputs.artifact-url }}
     
     steps:
     - name: Checkout code
@@ -20,14 +23,17 @@ jobs:
       run: cargo build --release
     
     - name: Upload linux artifact
-      id: artifact-linux
       uses: actions/upload-artifact@v4
+      id: artifact-up
       with:
         name: robin_ubuntu
         path: target/release/robin
 
   build-windows:
     runs-on: windows-latest
+
+    outputs:
+      outout: ${{ steps.artifact-up.outputs.artifact-url }}
     
     steps:
     - name: Checkout code
@@ -40,14 +46,17 @@ jobs:
       run: cargo build --release
     
     - name: Upload windows artifact
-      id: artifact-windows
       uses: actions/upload-artifact@v4
+      id: artifact-up
       with:
         name: robin_windows
         path: target/release/robin.exe
 
   build-darwin:
     runs-on: macos-latest
+
+    outputs:
+      outout: ${{ steps.artifact-up.outputs.artifact-url }}
     
     steps:
     - name: Checkout code
@@ -60,8 +69,8 @@ jobs:
       run: cargo build --release
 
     - name: Upload darwin artifact
-      id: artifact-darwin
       uses: actions/upload-artifact@v4
+      id: artifact-up
       with:
         name: robin_darwin
         path: target/release/robin
@@ -78,13 +87,13 @@ jobs:
         run: sudo apt install wget
 
       - name: Download ubuntu artifact
-        run: wget ${{ needs.build-ubuntu.artifact-linux.outputs.artifact-url }}
+        run: wget ${{ needs.build-ubuntu.outputs.outout }}
         
       - name: Download windows artifact
-        run: wget ${{ needs.build-ubuntu.artifact-windows.outputs.artifact-url }}
+        run: wget ${{ needs.build-windows.outputs.outout }}
 
       - name: Download darwin artifact
-        run: wget ${{ needs.build-ubuntu.artifact-darwin.outputs.artifact-url }}
+        run: wget ${{ needs.build-darwin.outputs.outout }}
 
       - name: Release
         uses: softprops/action-gh-release@v2
