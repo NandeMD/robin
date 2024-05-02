@@ -86,7 +86,19 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
 
-      - name: Display structure of downloaded files
+      - name: Install zip
+        run: sudo apt install zip
+
+      - name: Zip Ubuntu
+        run: zip -r ubuntu_release.zip robin_ubuntu
+      
+      - name: Zip Windows
+        run: zip -r windows_release.zip robin_windows
+
+      - name: Zip Darwin
+        run: zip -r darwin_release.zip robin_darwin
+
+      - name: Display structure of files
         run: ls -R
 
       - name: Release
