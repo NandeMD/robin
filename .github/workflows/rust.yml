@@ -18,16 +18,13 @@ jobs:
 
     - name: Build project for Linux
       run: cargo build --release
-
-    - name: Package Linux artifact
-      run: tar -czf robin_ubuntu.tar.gz target/release/robin
     
     - name: Upload linux artifact
       id: artifact-linux
       uses: actions/upload-artifact@v4
       with:
-        name: robin_ubuntu.tar.gz
-        path: robin_ubuntu.tar.gz
+        name: robin_ubuntu
+        path: target/release/robin
 
   build-windows:
     runs-on: windows-latest
@@ -46,7 +43,7 @@ jobs:
       id: artifact-windows
       uses: actions/upload-artifact@v4
       with:
-        name: robin.exe
+        name: robin_windows
         path: target/release/robin.exe
 
   build-darwin:
@@ -62,14 +59,40 @@ jobs:
     - name: Build project for Darwin
       run: cargo build --release
 
-    - name: Package Darwin artifact
-      run: tar -czf robin_darwin.tar.gz target/release/robin
-
     - name: Upload darwin artifact
       id: artifact-darwin
       uses: actions/upload-artifact@v4
       with:
-        name: robin_darwin.tar.gz
-        path: robin_darwin.tar.gz
+        name: robin_darwin
+        path: target/release/robin
 
-  
+  release:
+    runs-on: ubuntu-latest
+    needs: [build-ubuntu, build-windows, build-darwin]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install wget
+        run: sudo apt install wget
+
+      - name: Download ubuntu artifact
+        run: wget ${{ needs.build-ubuntu.artifact-linux.outputs.artifact-url }}
+        
+      - name: Download windows artifact
+        run: wget ${{ needs.build-ubuntu.artifact-windows.outputs.artifact-url }}
+
+      - name: Download darwin artifact
+        run: wget ${{ needs.build-ubuntu.artifact-darwin.outputs.artifact-url }}
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          prerelease: true
+          draft: true
+          make_latest: "true"
+          files: |
+            robin_ubuntu.zip
+            robin_windows.zip
+            robin_darwin.zip
