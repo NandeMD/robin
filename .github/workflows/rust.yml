@@ -4,11 +4,9 @@ on:
   push:
     branches:
       - release
-  pull_request:
-
 
 jobs:
-  build:
+  build-ubuntu:
     runs-on: ubuntu-latest
     
     steps:
@@ -17,40 +15,61 @@ jobs:
       
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
-      with:
-        targets: x86_64-unknown-linux-gnu, target=x86_64-pc-windows-gnu, x86_64-apple-darwin, aarch64-apple-darwin
 
     - name: Build project for Linux
-      run: cargo build --release --target=x86_64-unknown-linux-gnu
-
-    - name: Build project for Windows
-      run: cargo build --release --target=x86_64-pc-windows-gnu
-      shell: bash
-
-    - name: Build project for macOS
-      run: cargo build --release --target=x86_64-apple-darwin
-
-    - name: Build project for ARM macOS
-      run: cargo build --release --target=aarch64-apple-darwin
+      run: cargo build --release
 
     - name: Package Linux artifact
-      run: tar -czf linux_build.tar.gz target/x86_64-unknown-linux-gnu/release/your_project_name
-
-    - name: Package Windows artifact
-      run: zip -r windows_build.zip target/x86_64-pc-windows-msvc/release/your_project_name.exe
-
-    - name: Package macOS artifact
-      run: tar -czf macos_build.tar.gz target/x86_64-apple-darwin/release/your_project_name
-
-    - name: Package ARM macOS artifact
-      run: tar -czf arm_macos_build.tar.gz target/aarch64-apple-darwin/release/your_project_name
-
-    - name: Publish release
-      uses: softprops/action-gh-release@v1
+      run: tar -czf robin_ubuntu.tar.gz target/release/robin
+    
+    - name: Upload linux artifact
+      id: artifact-linux
+      uses: actions/upload-artifact@v4
       with:
-        files: |
-          linux_build.tar.gz
-          windows_build.zip
-          macos_build.tar.gz
-          arm_macos_build.tar.gz
-        token: ${{ secrets.ROBIN_TOKEN }}
+        name: robin_ubuntu.tar.gz
+        path: robin_ubuntu.tar.gz
+
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Build project for Windows
+      run: cargo build --release
+    
+    - name: Upload windows artifact
+      id: artifact-windows
+      uses: actions/upload-artifact@v4
+      with:
+        name: robin.exe
+        path: target/release/robin.exe
+
+  build-darwin:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Build project for Darwin
+      run: cargo build --release
+
+    - name: Package Darwin artifact
+      run: tar -czf robin_darwin.tar.gz target/release/robin
+
+    - name: Upload darwin artifact
+      id: artifact-darwin
+      uses: actions/upload-artifact@v4
+      with:
+        name: robin_darwin.tar.gz
+        path: robin_darwin.tar.gz
+
+  
