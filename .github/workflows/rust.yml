@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      outout: ${{ steps.artifact-up.outputs.artifact-url }}
+      outout: ${{ steps.artifact-up.outputs.artifact-id }}
     
     steps:
     - name: Checkout code
@@ -33,7 +33,7 @@ jobs:
     runs-on: windows-latest
 
     outputs:
-      outout: ${{ steps.artifact-up.outputs.artifact-url }}
+      outout: ${{ steps.artifact-up.outputs.artifact-id }}
     
     steps:
     - name: Checkout code
@@ -56,7 +56,7 @@ jobs:
     runs-on: macos-latest
 
     outputs:
-      outout: ${{ steps.artifact-up.outputs.artifact-url }}
+      outout: ${{ steps.artifact-up.outputs.artifact-id }}
     
     steps:
     - name: Checkout code
@@ -83,17 +83,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install wget
-        run: sudo apt install wget
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
 
-      - name: Download ubuntu artifact
-        run: wget ${{ needs.build-ubuntu.outputs.outout }}
-        
-      - name: Download windows artifact
-        run: wget ${{ needs.build-windows.outputs.outout }}
-
-      - name: Download darwin artifact
-        run: wget ${{ needs.build-darwin.outputs.outout }}
+      - name: Display structure of downloaded files
+        run: ls -R
 
       - name: Release
         uses: softprops/action-gh-release@v2
