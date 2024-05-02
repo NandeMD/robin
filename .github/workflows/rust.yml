@@ -5,8 +5,7 @@ on:
     branches:
       - release
   pull_request:
-    branches:
-      - release
+
 
 jobs:
   build:
@@ -18,6 +17,8 @@ jobs:
       
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: x86_64-unknown-linux-gnu, target=x86_64-pc-windows-msvc, x86_64-apple-darwin, aarch64-apple-darwin
 
     - name: Build project for Linux
       run: cargo build --release --target=x86_64-unknown-linux-gnu
