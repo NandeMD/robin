@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - release
+  pull_request:
+    branches:
+      - release
 
 jobs:
   build:
@@ -13,10 +16,8 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Set up Rust
-      uses: actions/setup-rust@v1
-      with:
-        rust-version: stable
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
 
     - name: Build project for Linux
       run: cargo build --release --target=x86_64-unknown-linux-gnu
