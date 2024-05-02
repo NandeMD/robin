@@ -104,17 +104,6 @@ jobs:
       - name: Display structure of files
         run: ls -R
 
-      - name: Create tag
-        uses: actions/github-script@v5
-        with:
-          script: |
-            github.rest.git.createRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: 'refs/tags/${{ env.VERSION }}',
-              sha: context.sha
-            })
-
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
