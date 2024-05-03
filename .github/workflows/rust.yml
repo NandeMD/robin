@@ -73,9 +73,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ inputs.version }}
-          body: "Automated builds!!! Yeey!!!"
+          body_path: ./CHANGELOG.md
           prerelease: true
-          draft: true
           make_latest: "true"
           files: |
             ubuntu_release.zip
