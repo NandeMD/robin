@@ -21,8 +21,11 @@ pub enum Commands {
         #[arg(short, long, default_value_t = false)]
         compress: bool,
 
+        /// Chapter filter. Example 1: 10:100 Example 2: 20.5:100.3  (Note: both numbers included)
+        #[arg(short, long, default_value_t = String::new())]
+        filter: String,
+
         /// URL of the source content
         url: String,
-    }
+    },
 }
-

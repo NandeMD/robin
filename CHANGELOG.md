@@ -1,3 +1,6 @@
+# v0.2.0
+- Added chapter filtering support.
+
 # v0.1.1
 
 - Added Github Actions Automated Build. 

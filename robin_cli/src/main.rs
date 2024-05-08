@@ -1,12 +1,12 @@
-use std::path::PathBuf;
-use std::fs::{File, create_dir_all};
+use std::fs::{create_dir_all, File};
 use std::io::{Read, Write};
+use std::path::PathBuf;
 
 use clap::Parser;
-use zip::{ZipWriter, CompressionMethod, write::FileOptions};
-use robin_cli_core::sources::Serie;
 use robin_cli_core::matcher::match_manga;
+use robin_cli_core::sources::Serie;
 use robin_cli_core::utils::create_progress_bar;
+use zip::{write::FileOptions, CompressionMethod, ZipWriter};
 
 mod args;
 use args::{App, Commands};
@@ -19,22 +19,28 @@ async fn main() -> anyhow::Result<()> {
     let app = App::parse();
 
     match &app.command {
-        Commands::Manga { compress, url } => {
+        Commands::Manga {
+            compress,
+            url,
+            filter,
+        } => {
             let url = url;
             let mut source = match_manga(url.clone()).await?;
             source.find_chapters().await;
+            source.filter_chapters(filter.clone())?;
 
             let info = source.info().clone();
-            let manga_name = info.iter()
-                .find(|inf| {
-                    inf.0 == "title"
-                })
-                .map(|uwu| {
-                    uwu.1.clone()
-                })
+            let manga_name = info
+                .iter()
+                .find(|inf| inf.0 == "title")
+                .map(|uwu| uwu.1.clone())
                 .unwrap();
-            
-            println!("Found manga!\n\n{}\n\nStarting download!", source.format_info(&info));
+
+            println!(
+                "Found manga!\n\n{}\n\nStarting download!",
+                source.format_info(&info)
+            );
+
             let temp = source.download(app.concurrent_chapters).await?;
 
             let mut pbar = create_progress_bar(source.chapter_count() as u64, "Adding files: ");
@@ -55,7 +61,7 @@ async fn main() -> anyhow::Result<()> {
                     for ent in walkdir::WalkDir::new(&temp.path())
                         .into_iter()
                         .filter_map(|e| e.ok())
-                        .filter(|e| {e.file_type().is_file()})
+                        .filter(|e| e.file_type().is_file())
                     {
                         let mut entry_file = File::open(&ent.path())?;
                         let entry_file_name = ent.path().strip_prefix(&temp.path())?;
@@ -75,7 +81,7 @@ async fn main() -> anyhow::Result<()> {
                     zipper.finish()?;
 
                     pbar.finish_print("Compressed!");
-                },
+                }
                 false => {
                     let output_folder = PathBuf::from(&app.output_folder);
                     let destination = output_folder.join(manga_name);
@@ -91,4 +97,3 @@ async fn main() -> anyhow::Result<()> {
 
     Ok(())
 }
-

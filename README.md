@@ -60,8 +60,9 @@ robin -o ~/Desktop manga https://testurluwuowo.uwu --compress
 See [SITES.md](https://github.com/NandeMD/robin/blob/main/SITES.md).
 
 # Goals
-- [ ] Add an option to manga command to select a chapter while downloading.
+- [X] Add an option to manga command to select a chapter while downloading.
 - [ ] Add support (new command) for downloading webnovels.
 - [ ] Add a command option to webnovel command that converts the downloaded files to ePub format.
 - [ ] Add at least 10 English content websites for manga.
 - [ ] Add at least 10 English content websites for webnovel.
+- [ ] Add proxy option.
