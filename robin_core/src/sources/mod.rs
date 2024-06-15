@@ -6,7 +6,7 @@ use tempfile::TempDir;
 pub mod shijie_turkish;
 
 pub trait Serie {
-    fn new(url: String) -> impl Future<Output = anyhow::Result<impl Serie>> + Sync;
+    fn new(url: String, proxy: String) -> impl Future<Output = anyhow::Result<impl Serie>> + Sync;
     fn find_chapters(&mut self) -> impl Future<Output = ()>;
     fn get_cover(&self) -> impl Future<Output = anyhow::Result<(String, Vec<u8>)>>;
     // n_sim is number of chapters that will be downloaded in parallel

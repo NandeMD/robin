@@ -25,7 +25,7 @@ async fn main() -> anyhow::Result<()> {
             filter,
         } => {
             let url = url;
-            let mut source = match_manga(url.clone()).await?;
+            let mut source = match_manga(url.clone(), app.proxy.clone()).await?;
             source.find_chapters().await;
             source.filter_chapters(filter.clone())?;
 
