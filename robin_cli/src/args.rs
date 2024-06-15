@@ -11,7 +11,7 @@ pub struct App {
     pub output_folder: String,
 
     /// Number of chapters that will be downloaded at the same time
-    #[arg(short, long, default_value_t = 3)]
+    #[arg(short, long, default_value_t = 1)]
     pub concurrent_chapters: usize,
 }
 
