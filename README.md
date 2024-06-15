@@ -65,4 +65,4 @@ See [SITES.md](https://github.com/NandeMD/robin/blob/main/SITES.md).
 - [ ] Add a command option to webnovel command that converts the downloaded files to ePub format.
 - [ ] Add at least 10 English content websites for manga.
 - [ ] Add at least 10 English content websites for webnovel.
-- [ ] Add proxy option.
+- [X] Add proxy option.
