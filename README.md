@@ -4,15 +4,17 @@ A cross-platform command line tool to mass download manga and webnovel from mult
 
 # Installation
 
-## From Cargo (Recommended)
+## From Releases (Recommended)
+Download the binary from [releases](https://github.com/NandeMD/robin) and use it.
+
+## From Cargo
 ```bash
 cargo install robin_cli
 ```
 
-## From Releases
-Download the binary from [releases](https://github.com/NandeMD/robin) and use it.
-
 ## From Source
+You can get the latest features by compiling yourself.
+
 1. Clone the repository.
     ```bash
     git clone https://github.com/NandeMD/robin.git
@@ -56,3 +58,11 @@ robin -o ~/Desktop manga https://testurluwuowo.uwu --compress
 
 # Supported Sites:
 See [SITES.md](https://github.com/NandeMD/robin/blob/main/SITES.md).
+
+# Goals
+- [X] Add an option to manga command to select a chapter while downloading.
+- [ ] Add support (new command) for downloading webnovels.
+- [ ] Add a command option to webnovel command that converts the downloaded files to ePub format.
+- [ ] Add at least 10 English content websites for manga.
+- [ ] Add at least 10 English content websites for webnovel.
+- [ ] Add proxy option.
