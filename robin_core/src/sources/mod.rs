@@ -4,6 +4,7 @@ use reqwest::Client;
 use tempfile::TempDir;
 
 pub mod shijie_turkish;
+pub mod novelfullcom_english;
 
 pub trait Serie {
     fn new(url: String, proxy: String) -> impl Future<Output = anyhow::Result<impl Serie>> + Sync;
@@ -49,4 +50,15 @@ pub trait Chapter {
     fn info(&self) -> Vec<(&str, String)>;
     fn format_info(&self, info: &Vec<(&str, String)>) -> String;
     fn chapter_num(&self) -> f64;
+}
+
+
+pub trait Novel {
+    fn new(url: String, proxy: String) -> impl Future<Output = anyhow::Result<impl Novel>> + Sync;
+    fn find_chapters(&mut self) -> impl Future<Output = ()>;
+    fn get_cover(&self) -> impl Future<Output = anyhow::Result<(String, Vec<u8>)>>;
+}
+
+pub trait NovelChapter {
+
 }

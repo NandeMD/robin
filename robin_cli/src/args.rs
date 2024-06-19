@@ -32,4 +32,9 @@ pub enum Commands {
         /// URL of the source content
         url: String,
     },
+
+    Novel {
+        // URL of the source content
+        url: String,
+    },
 }

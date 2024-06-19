@@ -3,8 +3,8 @@ use std::io::{Read, Write};
 use std::path::PathBuf;
 
 use clap::Parser;
-use robin_cli_core::matcher::match_manga;
-use robin_cli_core::sources::Serie;
+use robin_cli_core::matcher::{match_manga, match_novel};
+use robin_cli_core::sources::{Serie, Novel};
 use robin_cli_core::utils::create_progress_bar;
 use zip::{write::FileOptions, CompressionMethod, ZipWriter};
 
@@ -92,6 +92,10 @@ async fn main() -> anyhow::Result<()> {
                     copy_dir_all(&temp, destination)?;
                 }
             }
+        },
+        Commands::Novel { url } => {
+            let mut source = match_novel(url.clone(), app.proxy.clone()).await?;
+            source.find_chapters().await;
         }
     }
 
