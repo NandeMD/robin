@@ -42,6 +42,7 @@ impl Novel for NovelFullCom {
 
     async fn find_chapters(&mut self) {
         let last_page_selector = Selector::parse(".last > a:nth-child(1)").unwrap();
+        let chapter_link_selector = Selector::parse("div.col-sm-6 > ul:nth-child(1) > li > a").unwrap();
         let last_page_url = self.data.select(&last_page_selector).next().unwrap().value().attr("href").unwrap();
         let last_page_number = last_page_url
             .rsplit_once("=")
@@ -50,14 +51,27 @@ impl Novel for NovelFullCom {
             .parse::<u64>()
             .unwrap();
 
-        // let mut pb = create_progress_bar(last_page_number, "Fetching chapters: ");
+        // get the total chapter count
+        let last_page_text = self.client.get(format!("{}/{}", BASE_URL, last_page_url))
+            .send()
+            .await
+            .unwrap()
+            .text()
+            .await
+            .unwrap();
+
+        let last_page_data = Html::parse_document(&last_page_text);
+        let last_page_chapter_count = last_page_data.select(&chapter_link_selector).count();
+
+        let total = last_page_chapter_count as u64 + ((last_page_number - 1) * 50);
+
+
+        let mut pb = create_progress_bar(total, "Finding chapters: ");
 
         for i in 1..=last_page_number {
             let page_url = format!("{}?page={}", self.url, i);
             let page = self.client.get(&page_url).send().await.unwrap().text().await.unwrap();
             let data = Html::parse_document(&page);
-
-            let chapter_link_selector = Selector::parse("div.col-sm-6:nth-child(1) > ul:nth-child(1) > li > a").unwrap();
 
             for ch_link in data.select(&chapter_link_selector) {
                 let title = ch_link.text().collect::<String>();
@@ -68,23 +82,23 @@ impl Novel for NovelFullCom {
                 if href.starts_with("http") {
                     ch_url = href.to_string();
                 } else {
-                    ch_url = format!("{}{}", BASE_URL, href);
+                    ch_url = format!("{}/{}", BASE_URL, href);
                 }
-
-                println!("{}: {}", title, ch_url);
 
                 self.chapters.push(NovelFullComChapter {
                     title,
                     url: ch_url
                 });
 
+                pb.inc();
+
                 if i == last_page_number {
-                    // pb.finish_print(format!("{} chapters fetched!", self.chapters.len()).as_str());
-                    println!("{} chapters fetched!", self.chapters.len());
                     break;
                 }
             }
         }
+
+        pb.finish();
     }
 
     async fn get_cover(&self) -> anyhow::Result<(String, Vec<u8>)> {
