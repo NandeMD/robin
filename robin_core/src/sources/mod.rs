@@ -57,6 +57,31 @@ pub trait Novel {
     fn new(url: String, proxy: String) -> impl Future<Output = anyhow::Result<impl Novel>> + Sync;
     fn find_chapters(&mut self) -> impl Future<Output = ()>;
     fn get_cover(&self) -> impl Future<Output = anyhow::Result<(String, Vec<u8>)>>;
+    fn chapters(&mut self) -> &mut Vec<impl NovelChapter>;
+
+    fn parse_chapter_filter(&self, a: String) -> anyhow::Result<Option<(f64, f64)>> {
+        if a.is_empty() {
+            return Ok(None);
+        }
+
+        let splitted = a.split(":").collect::<Vec<&str>>();
+
+        let lower_bound: f64 = splitted[0].parse()?;
+        let upper_bound: f64 = splitted[1].parse()?;
+
+        Ok(Some((lower_bound, upper_bound)))
+    }
+
+    fn filter_chapters(&mut self, filter_param: String) -> anyhow::Result<()> {
+        if let Some((lb, ub)) = self.parse_chapter_filter(filter_param)? {
+            self.chapters()
+                .retain(|c| c.chapter_num() >= lb && c.chapter_num() <= ub);
+        }
+        Ok(())
+    }
+
+    fn info(&self) -> Vec<(&str, String)>;
+    fn format_info(&self, info: &Vec<(&str, String)>) -> String;
 }
 
 pub trait NovelChapter {

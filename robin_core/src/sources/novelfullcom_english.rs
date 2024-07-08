@@ -119,6 +119,67 @@ impl Novel for NovelFullCom {
         
         Ok((cover_src, cover_bytes.into()))
     }
+
+    fn chapters(&mut self) -> &mut Vec<impl super::NovelChapter> {
+        &mut self.chapters
+    }
+
+    fn info(&self) -> Vec<(&str, String)> {
+        let mut buff: Vec<(&str, String)> = Vec::new();
+
+        let title_selector = Selector::parse("div.col-xs-12:nth-child(3) > h3:nth-child(1)").unwrap();
+        let author_selector = Selector::parse(".info > div:nth-child(1) > a").unwrap();
+        let alternative_names_selector = Selector::parse(".info > div:nth-child(2)").unwrap();
+        let genres_selector = Selector::parse(".info > div:nth-child(3) > a").unwrap();
+        let source_selector = Selector::parse(".info > div:nth-child(4)").unwrap();
+        let status_selector = Selector::parse(".info > div:nth-child(5) > a").unwrap();
+
+        let title = self.data.select(&title_selector).next().unwrap().text().collect::<String>();
+
+        let author = self.data.select(&author_selector)
+            .map(|t| {
+                let tt = t.text().collect::<String>();
+                tt
+            })
+            .collect::<Vec<String>>()
+            .join(", ");
+
+        let alternative_names = self.data.select(&alternative_names_selector).next().unwrap().text().collect::<String>();
+        
+        let genres = self.data.select(&genres_selector)
+            .map(|t| {
+                let tt = t.text().collect::<String>();
+                tt
+            })
+            .collect::<Vec<String>>()
+            .join(", ");
+
+        let source = self.data.select(&source_selector).next().unwrap().text().collect::<String>();
+
+        let status = self.data.select(&status_selector).next().unwrap().text().collect::<String>();
+
+        buff.push(("title", title));
+        buff.push(("author", author));
+        buff.push(("alternative names", alternative_names));
+        buff.push(("genres", genres));
+        buff.push(("source", source));
+        buff.push(("status", status));
+        
+        buff
+    }
+
+    fn format_info(&self, info: &Vec<(&str, String)>) -> String {
+        let mut buff = String::new();
+
+        for (k, v) in info {
+            buff.push_str(&capitalize(k));
+            buff.push_str(": ");
+            buff.push_str(&v);
+            buff.push('\n');
+        }
+
+        buff
+    }
 }
 
 pub struct NovelFullComChapter {
