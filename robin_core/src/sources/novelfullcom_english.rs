@@ -1,9 +1,11 @@
 use super::{Novel, NovelChapter};
 
-use crate::utils::create_progress_bar;
+use crate::utils::{create_progress_bar, INT_FLOAT_REGEX, capitalize};
 
 use reqwest::{Client, ClientBuilder};
 use scraper::{Html, Selector};
+
+use regex::Regex;
 
 const BASE_URL: &str = "https://novelfull.com";
 
@@ -87,7 +89,8 @@ impl Novel for NovelFullCom {
 
                 self.chapters.push(NovelFullComChapter {
                     title,
-                    url: ch_url
+                    url: ch_url,
+                    content: String::new()
                 });
 
                 pb.inc();
@@ -121,6 +124,63 @@ impl Novel for NovelFullCom {
 pub struct NovelFullComChapter {
     title: String,
     url: String,
+    content: String,
 }
 
-impl NovelChapter for NovelFullComChapter {}
+impl NovelChapter for NovelFullComChapter {
+    async fn download(&mut self, c: &Client) -> anyhow::Result<()> {
+        let page = c.get(&self.url).send().await?.text().await?;
+        let data = Html::parse_document(&page);
+
+        let content_selector = Selector::parse("#chapter-content > p").unwrap();
+        
+        let content = data.select(&content_selector)
+            .map(|p| p.text().collect::<String>())
+            .collect::<Vec<String>>()
+            .join("\n\n");
+
+        self.content = content;
+
+        Ok(())
+    }
+
+    fn chapter_num(&self) -> f64 {
+        let re = Regex::new(INT_FLOAT_REGEX).unwrap();
+
+        // find number regex in title
+        let num = re.find(&self.title).unwrap().as_str();
+
+        num.parse().unwrap()
+    }
+
+    fn format_info(&self, info: &Vec<(&str, String)>) -> String {
+        let mut buff = String::new();
+
+        for (k, v) in info {
+            buff.push_str(&capitalize(k));
+            buff.push_str(": ");
+            buff.push_str(&v);
+            buff.push('\n');
+        }
+
+        buff
+    }
+
+    fn info(&self) -> Vec<(&str, String)> {
+        let mut buff: Vec<(&str, String)> = Vec::new();
+
+        buff.push(("title", self.title.clone()));
+        buff.push(("source", self.url.clone()));
+
+        // calculate word count
+        let word_count = self.content.split_whitespace().count();
+
+        // calculate character_count
+        let character_count = self.content.chars().count();
+
+        buff.push(("word count", word_count.to_string()));
+        buff.push(("character count", character_count.to_string()));
+
+        buff
+    }
+}

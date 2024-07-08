@@ -60,5 +60,9 @@ pub trait Novel {
 }
 
 pub trait NovelChapter {
+    fn download(&mut self, c: &Client) -> impl Future<Output = anyhow::Result<()>>;
 
+    fn info(&self) -> Vec<(&str, String)>;
+    fn format_info(&self, info: &Vec<(&str, String)>) -> String;
+    fn chapter_num(&self) -> f64;
 }
