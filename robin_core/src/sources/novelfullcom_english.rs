@@ -108,6 +108,7 @@ impl Novel for NovelFullCom {
         }
 
         pb.finish();
+        println!("\n");
     }
 
     async fn get_cover(&self) -> anyhow::Result<(String, Vec<u8>)> {
@@ -174,6 +175,7 @@ impl Novel for NovelFullCom {
             r?;
         }
 
+        pbar.lock().unwrap().finish_print("Downloaded!");
         Ok(tmpdir)
     }
 
