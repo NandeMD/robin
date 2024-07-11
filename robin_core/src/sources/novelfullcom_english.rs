@@ -143,7 +143,36 @@ impl Novel for NovelFullCom {
         f.write_all(&cover_bytes).await?;
 
         // Download chapters
-        
+        let stream = futures::stream::iter(
+            self.chapters
+                .iter_mut()
+                .map(|c| {
+                    let counter = Arc::clone(&pbar);
+                    (c, counter)
+                })
+                .map(|(c, counter)| async move {
+                    let ch_path = tmp_path.join(format!("{}.txt", c.title));
+                    create_dir(&ch_path).await?;
+
+                    c.download(client).await?;
+
+                    let mut f = File::create(ch_path).await?;
+                    f.write_all(c.content.as_bytes()).await?;
+                    
+                    let mut count_bar = counter.lock().unwrap();
+                    count_bar.inc();
+                    drop(count_bar);
+
+                    anyhow::Ok(())
+                })
+        )
+        .buffered(n_sim);
+
+        let results = stream.collect::<Vec<_>>().await;
+
+        for r in results {
+            r?;
+        }
 
         Ok(tmpdir)
     }
