@@ -5,6 +5,12 @@ use crate::utils::{create_progress_bar, INT_FLOAT_REGEX, capitalize};
 use reqwest::{Client, ClientBuilder};
 use scraper::{Html, Selector};
 
+use std::sync::{Arc, Mutex};
+use futures::StreamExt;
+use tempfile::{tempdir, TempDir};
+use tokio::fs::{create_dir, File};
+use tokio::io::AsyncWriteExt;
+
 use regex::Regex;
 
 const BASE_URL: &str = "https://novelfull.com";
@@ -114,10 +120,32 @@ impl Novel for NovelFullCom {
                 .unwrap()
         );
 
+        let cover_url_ext = cover_src.split(".").last().unwrap();
         let cover_resp = self.client.get(&cover_src).send().await?;
         let cover_bytes = cover_resp.bytes().await?;
         
-        Ok((cover_src, cover_bytes.into()))
+        Ok((cover_url_ext.into(), cover_bytes.into()))
+    }
+
+    async fn download(&mut self, n_sim: usize) -> anyhow::Result<TempDir> {
+        let tmpdir = tempdir()?;
+        let tmp_path = tmpdir.path();
+        println!("Temporary directory created at: {:?}", &tmp_path);
+        
+        let client = &self.client;
+        let chapter_count = self.chapters.len();
+        let pbar = Arc::new(Mutex::new(create_progress_bar(chapter_count as u64, "Downloading: ")));
+
+        // Download cover image and save it to the temporary directory
+        let (cover_src, cover_bytes) = self.get_cover().await?;
+        let cover_filename = format!("cover.{}", cover_src);
+        let mut f = File::create(tmp_path.join(&cover_filename)).await?;
+        f.write_all(&cover_bytes).await?;
+
+        // Download chapters
+        
+
+        Ok(tmpdir)
     }
 
     fn chapters(&mut self) -> &mut Vec<impl super::NovelChapter> {

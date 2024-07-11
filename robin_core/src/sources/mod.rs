@@ -58,6 +58,7 @@ pub trait Novel {
     fn find_chapters(&mut self) -> impl Future<Output = ()>;
     fn get_cover(&self) -> impl Future<Output = anyhow::Result<(String, Vec<u8>)>>;
     fn chapters(&mut self) -> &mut Vec<impl NovelChapter>;
+    fn download(&mut self, n_sim: usize) -> impl Future<Output = anyhow::Result<TempDir>>;
 
     fn parse_chapter_filter(&self, a: String) -> anyhow::Result<Option<(f64, f64)>> {
         if a.is_empty() {
