@@ -112,13 +112,13 @@ impl Novel for NovelFullCom {
     }
 
     async fn get_cover(&self) -> anyhow::Result<(String, Vec<u8>)> {
-        let cover_selector = Selector::parse(".book > img:nth-child(1)").unwrap();
+        let cover_selector = Selector::parse(".book > img").unwrap();
         let cover_src = format!("{BASE_URL}{}", 
             self.data.select(&cover_selector)
                 .next()
                 .unwrap()
                 .attr("src")
-                .unwrap()
+                .unwrap_or_default()
         );
 
         let cover_url_ext = cover_src.split(".").last().unwrap();
@@ -153,7 +153,6 @@ impl Novel for NovelFullCom {
                 })
                 .map(|(c, counter)| async move {
                     let ch_path = tmp_path.join(format!("{}.txt", c.title));
-                    create_dir(&ch_path).await?;
 
                     c.download(client).await?;
 

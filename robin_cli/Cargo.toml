@@ -19,6 +19,8 @@ robin_cli_core = { path = "../robin_core", version = "0.1.0" }
 tokio = { version = "1.37.0", features = ["full"] }
 walkdir = "2.5.0"
 zip = "0.6"
+epub-builder = "0.7.4"
+natord = "1.0.9"
 
 [[bin]]
 name = "robin"

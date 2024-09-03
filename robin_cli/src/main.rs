@@ -8,11 +8,13 @@ use robin_cli_core::sources::{Serie, Novel};
 use robin_cli_core::utils::create_progress_bar;
 use zip::{write::FileOptions, CompressionMethod, ZipWriter};
 
+use epub_builder::{EpubBuilder, EpubVersion, ZipLibrary};
+
 mod args;
-use args::{App, Commands};
+use args::{App, Commands, NovelFormat};
 
 mod utils;
-use utils::copy_dir_all;
+use utils::{copy_dir_all, find_in_info};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -93,9 +95,82 @@ async fn main() -> anyhow::Result<()> {
                 }
             }
         },
-        Commands::Novel { url } => {
+        Commands::Novel { url, filter, format } => {
             let mut source = match_novel(url.clone(), app.proxy.clone()).await?;
             source.find_chapters().await;
+            source.filter_chapters(filter.clone())?;
+
+            let info = source.info().clone();
+            let novel_name = info
+                .iter()
+                .find(|inf| inf.0 == "title")
+                .map(|uwu| uwu.1.clone())
+                .unwrap();
+
+            println!(
+                "Found manga!\n\n{}\n\nStarting download!",
+                source.format_info(&info)
+            );
+
+            let info = info.clone().iter().map(|(a, b)| (a.to_string(), b.to_string())).collect::<Vec<(String, String)>>();
+
+            let temp = source.download(app.concurrent_chapters).await?;
+
+            match format {
+                NovelFormat::Txt => {
+                    let output_folder = PathBuf::from(&app.output_folder);
+                    let destination = output_folder.join(novel_name);
+
+                    println!("Copying files to: {}", destination.display());
+
+                    create_dir_all(&destination)?;
+                    copy_dir_all(&temp, destination)?;
+                }
+                NovelFormat::Epub => {
+                    let mut pbar = create_progress_bar(source.chapters().len() as u64, "Adding files: ");
+
+                    // get all full file paths in the temp directory as &str
+                    let mut files = walkdir::WalkDir::new(&temp.path())
+                        .into_iter()
+                        .filter_map(|e| e.ok())
+                        .filter(|e| e.file_type().is_file())
+                        .map(|e| e.path().to_str().unwrap().to_string())
+                        .collect::<Vec<String>>();
+                    files.sort_by(|a, b| natord::compare(&a, &b));
+
+                    // find the cover image
+                    let cover = files.iter().find(|f| f.contains("cover")).unwrap();
+                    
+                    // open cover image and convert to bytes
+                    let mut cover_file = File::open(cover)?;
+                    let mut cover_bytes = Vec::new();
+                    cover_file.read_to_end(&mut cover_bytes)?;
+
+                    // get the cover image extension and turn into a mimetype
+                    let cover_ext = cover.split('.').last().unwrap();
+                    let cover_mimetype = match cover_ext {
+                        "jpg" | "jpeg" => "image/jpeg",
+                        "png" => "image/png",
+                        "gif" => "image/gif",
+                        _ => "image/jpeg",
+                    };
+
+                    let mut book_builder = EpubBuilder::new(ZipLibrary::new().unwrap())
+                        .unwrap()
+                        .epub_version(EpubVersion::V30)
+                        .metadata("title", find_in_info(&info, "title").unwrap()).unwrap()
+                        .metadata("author", find_in_info(&info, "author").unwrap()).unwrap()
+                        .metadata("alternative names", find_in_info(&info, "alternative names").unwrap()).unwrap()
+                        .metadata("genres", find_in_info(&info, "genres").unwrap()).unwrap()
+                        .metadata("source", find_in_info(&info, "source").unwrap()).unwrap()
+                        .metadata("status", find_in_info(&info, "status").unwrap()).unwrap()
+                        .add_cover_image(cover, cover_bytes.as_slice(), cover_mimetype).unwrap();
+
+
+
+                    unimplemented!()
+                }
+            }
         }
     }
 
