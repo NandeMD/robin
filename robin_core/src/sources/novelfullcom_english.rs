@@ -1,14 +1,14 @@
 use super::{Novel, NovelChapter};
 
-use crate::utils::{create_progress_bar, INT_FLOAT_REGEX, capitalize};
+use crate::utils::{capitalize, create_progress_bar, INT_FLOAT_REGEX};
 
 use reqwest::{Client, ClientBuilder};
 use scraper::{Html, Selector};
 
-use std::sync::{Arc, Mutex};
 use futures::StreamExt;
+use std::sync::{Arc, Mutex};
 use tempfile::{tempdir, TempDir};
-use tokio::fs::{create_dir, File};
+use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
 
 use regex::Regex;
@@ -39,19 +39,27 @@ impl Novel for NovelFullCom {
 
         let page = client.get(&url).send().await?.text().await?;
         let data = Html::parse_document(&page);
-        
+
         Ok(NovelFullCom {
             url,
             client,
             data,
-            chapters: Vec::new()
+            chapters: Vec::new(),
         })
     }
 
     async fn find_chapters(&mut self) {
         let last_page_selector = Selector::parse(".last > a:nth-child(1)").unwrap();
-        let chapter_link_selector = Selector::parse("div.col-sm-6 > ul:nth-child(1) > li > a").unwrap();
-        let last_page_url = self.data.select(&last_page_selector).next().unwrap().value().attr("href").unwrap();
+        let chapter_link_selector =
+            Selector::parse("div.col-sm-6 > ul:nth-child(1) > li > a").unwrap();
+        let last_page_url = self
+            .data
+            .select(&last_page_selector)
+            .next()
+            .unwrap()
+            .value()
+            .attr("href")
+            .unwrap();
         let last_page_number = last_page_url
             .rsplit_once("=")
             .unwrap()
@@ -60,7 +68,9 @@ impl Novel for NovelFullCom {
             .unwrap();
 
         // get the total chapter count
-        let last_page_text = self.client.get(format!("{}/{}", BASE_URL, last_page_url))
+        let last_page_text = self
+            .client
+            .get(format!("{}/{}", BASE_URL, last_page_url))
             .send()
             .await
             .unwrap()
@@ -73,12 +83,19 @@ impl Novel for NovelFullCom {
 
         let total = last_page_chapter_count as u64 + ((last_page_number - 1) * 50);
 
-
         let mut pb = create_progress_bar(total, "Finding chapters: ");
 
         for i in 1..=last_page_number {
             let page_url = format!("{}?page={}", self.url, i);
-            let page = self.client.get(&page_url).send().await.unwrap().text().await.unwrap();
+            let page = self
+                .client
+                .get(&page_url)
+                .send()
+                .await
+                .unwrap()
+                .text()
+                .await
+                .unwrap();
             let data = Html::parse_document(&page);
 
             for ch_link in data.select(&chapter_link_selector) {
@@ -90,13 +107,13 @@ impl Novel for NovelFullCom {
                 if href.starts_with("http") {
                     ch_url = href.to_string();
                 } else {
-                    ch_url = format!("{}/{}", BASE_URL, href);
+                    ch_url = format!("{}{}", BASE_URL, href);
                 }
 
                 self.chapters.push(NovelFullComChapter {
                     title,
                     url: ch_url,
-                    content: String::new()
+                    content: String::new(),
                 });
 
                 pb.inc();
@@ -112,19 +129,24 @@ impl Novel for NovelFullCom {
     }
 
     async fn get_cover(&self) -> anyhow::Result<(String, Vec<u8>)> {
-        let cover_selector = Selector::parse(".book > img").unwrap();
-        let cover_src = format!("{BASE_URL}{}", 
-            self.data.select(&cover_selector)
+        let cover_selector = Selector::parse(".book > img:nth-child(1)").unwrap();
+        let cover_element = self.data.select(&cover_selector).next().unwrap();
+        let cover_src = format!(
+            "{BASE_URL}{}",
+            self.data
+                .select(&cover_selector)
                 .next()
                 .unwrap()
-                .attr("src")
+                .attr("data-cfsrc")
                 .unwrap_or_default()
         );
+
+        println!("{cover_src}");
 
         let cover_url_ext = cover_src.split(".").last().unwrap();
         let cover_resp = self.client.get(&cover_src).send().await?;
         let cover_bytes = cover_resp.bytes().await?;
-        
+
         Ok((cover_url_ext.into(), cover_bytes.into()))
     }
 
@@ -132,10 +154,13 @@ impl Novel for NovelFullCom {
         let tmpdir = tempdir()?;
         let tmp_path = tmpdir.path();
         println!("Temporary directory created at: {:?}", &tmp_path);
-        
+
         let client = &self.client;
         let chapter_count = self.chapters.len();
-        let pbar = Arc::new(Mutex::new(create_progress_bar(chapter_count as u64, "Downloading: ")));
+        let pbar = Arc::new(Mutex::new(create_progress_bar(
+            chapter_count as u64,
+            "Downloading: ",
+        )));
 
         // Download cover image and save it to the temporary directory
         let (cover_src, cover_bytes) = self.get_cover().await?;
@@ -158,13 +183,13 @@ impl Novel for NovelFullCom {
 
                     let mut f = File::create(ch_path).await?;
                     f.write_all(c.content.as_bytes()).await?;
-                    
+
                     let mut count_bar = counter.lock().unwrap();
                     count_bar.inc();
                     drop(count_bar);
 
                     anyhow::Ok(())
-                })
+                }),
         )
         .buffered(n_sim);
 
@@ -185,16 +210,25 @@ impl Novel for NovelFullCom {
     fn info(&self) -> Vec<(&str, String)> {
         let mut buff: Vec<(&str, String)> = Vec::new();
 
-        let title_selector = Selector::parse("div.col-xs-12:nth-child(3) > h3:nth-child(1)").unwrap();
+        let title_selector =
+            Selector::parse("div.col-xs-12:nth-child(3) > h3:nth-child(1)").unwrap();
         let author_selector = Selector::parse(".info > div:nth-child(1) > a").unwrap();
         let alternative_names_selector = Selector::parse(".info > div:nth-child(2)").unwrap();
         let genres_selector = Selector::parse(".info > div:nth-child(3) > a").unwrap();
         let source_selector = Selector::parse(".info > div:nth-child(4)").unwrap();
         let status_selector = Selector::parse(".info > div:nth-child(5) > a").unwrap();
 
-        let title = self.data.select(&title_selector).next().unwrap().text().collect::<String>();
+        let title = self
+            .data
+            .select(&title_selector)
+            .next()
+            .unwrap()
+            .text()
+            .collect::<String>();
 
-        let author = self.data.select(&author_selector)
+        let author = self
+            .data
+            .select(&author_selector)
             .map(|t| {
                 let tt = t.text().collect::<String>();
                 tt
@@ -202,9 +236,17 @@ impl Novel for NovelFullCom {
             .collect::<Vec<String>>()
             .join(", ");
 
-        let alternative_names = self.data.select(&alternative_names_selector).next().unwrap().text().collect::<String>();
-        
-        let genres = self.data.select(&genres_selector)
+        let alternative_names = self
+            .data
+            .select(&alternative_names_selector)
+            .next()
+            .unwrap()
+            .text()
+            .collect::<String>();
+
+        let genres = self
+            .data
+            .select(&genres_selector)
             .map(|t| {
                 let tt = t.text().collect::<String>();
                 tt
@@ -212,9 +254,21 @@ impl Novel for NovelFullCom {
             .collect::<Vec<String>>()
             .join(", ");
 
-        let source = self.data.select(&source_selector).next().unwrap().text().collect::<String>();
+        let source = self
+            .data
+            .select(&source_selector)
+            .next()
+            .unwrap()
+            .text()
+            .collect::<String>();
 
-        let status = self.data.select(&status_selector).next().unwrap().text().collect::<String>();
+        let status = self
+            .data
+            .select(&status_selector)
+            .next()
+            .unwrap()
+            .text()
+            .collect::<String>();
 
         buff.push(("title", title));
         buff.push(("author", author));
@@ -222,7 +276,7 @@ impl Novel for NovelFullCom {
         buff.push(("genres", genres));
         buff.push(("source", source));
         buff.push(("status", status));
-        
+
         buff
     }
 
@@ -252,8 +306,9 @@ impl NovelChapter for NovelFullComChapter {
         let data = Html::parse_document(&page);
 
         let content_selector = Selector::parse("#chapter-content > p").unwrap();
-        
-        let content = data.select(&content_selector)
+
+        let content = data
+            .select(&content_selector)
             .map(|p| p.text().collect::<String>())
             .collect::<Vec<String>>()
             .join("\n\n");
@@ -301,5 +356,19 @@ impl NovelChapter for NovelFullComChapter {
         buff.push(("character count", character_count.to_string()));
 
         buff
+    }
+}
+
+// Test for downloading novelfull
+#[cfg(test)]
+mod nvl_fll_tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_download() {
+        let url = "https://novelfull.com/everyone-wants-to-pamper-the-bigshot-researcher-after-her-rebirth.html";
+        let mut novel = NovelFullCom::new(url.into(), "".into()).await.unwrap();
+        novel.find_chapters().await;
+        let _ = novel.download(1).await.unwrap();
     }
 }

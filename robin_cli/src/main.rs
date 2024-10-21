@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use clap::Parser;
 use robin_cli_core::matcher::{match_manga, match_novel};
-use robin_cli_core::sources::{Serie, Novel};
+use robin_cli_core::sources::{Novel, Serie};
 use robin_cli_core::utils::create_progress_bar;
 use zip::{write::FileOptions, CompressionMethod, ZipWriter};
 
@@ -94,8 +94,12 @@ async fn main() -> anyhow::Result<()> {
                     copy_dir_all(&temp, destination)?;
                 }
             }
-        },
-        Commands::Novel { url, filter, format } => {
+        }
+        Commands::Novel {
+            url,
+            filter,
+            format,
+        } => {
             let mut source = match_novel(url.clone(), app.proxy.clone()).await?;
             source.find_chapters().await;
             source.filter_chapters(filter.clone())?;
@@ -108,11 +112,15 @@ async fn main() -> anyhow::Result<()> {
                 .unwrap();
 
             println!(
-                "Found manga!\n\n{}\n\nStarting download!",
+                "Found novel!\n\n{}\n\nStarting download!",
                 source.format_info(&info)
             );
 
-            let info = info.clone().iter().map(|(a, b)| (a.to_string(), b.to_string())).collect::<Vec<(String, String)>>();
+            let info = info
+                .clone()
+                .iter()
+                .map(|(a, b)| (a.to_string(), b.to_string()))
+                .collect::<Vec<(String, String)>>();
 
             let temp = source.download(app.concurrent_chapters).await?;
 
@@ -127,7 +135,8 @@ async fn main() -> anyhow::Result<()> {
                     copy_dir_all(&temp, destination)?;
                 }
                 NovelFormat::Epub => {
-                    let mut pbar = create_progress_bar(source.chapters().len() as u64, "Adding files: ");
+                    let mut pbar =
+                        create_progress_bar(source.chapters().len() as u64, "Adding files: ");
 
                     // get all full file paths in the temp directory as &str
                     let mut files = walkdir::WalkDir::new(&temp.path())
@@ -140,7 +149,7 @@ async fn main() -> anyhow::Result<()> {
 
                     // find the cover image
                     let cover = files.iter().find(|f| f.contains("cover")).unwrap();
-                    
+
                     // open cover image and convert to bytes
                     let mut cover_file = File::open(cover)?;
                     let mut cover_bytes = Vec::new();
@@ -158,15 +167,23 @@ async fn main() -> anyhow::Result<()> {
                     let mut book_builder = EpubBuilder::new(ZipLibrary::new().unwrap())
                         .unwrap()
                         .epub_version(EpubVersion::V30)
-                        .metadata("title", find_in_info(&info, "title").unwrap()).unwrap()
-                        .metadata("author", find_in_info(&info, "author").unwrap()).unwrap()
-                        .metadata("alternative names", find_in_info(&info, "alternative names").unwrap()).unwrap()
-                        .metadata("genres", find_in_info(&info, "genres").unwrap()).unwrap()
-                        .metadata("source", find_in_info(&info, "source").unwrap()).unwrap()
-                        .metadata("status", find_in_info(&info, "status").unwrap()).unwrap()
-                        .add_cover_image(cover, cover_bytes.as_slice(), cover_mimetype).unwrap();
-
-
+                        .metadata("title", find_in_info(&info, "title").unwrap())
+                        .unwrap()
+                        .metadata("author", find_in_info(&info, "author").unwrap())
+                        .unwrap()
+                        .metadata(
+                            "alternative names",
+                            find_in_info(&info, "alternative names").unwrap(),
+                        )
+                        .unwrap()
+                        .metadata("genres", find_in_info(&info, "genres").unwrap())
+                        .unwrap()
+                        .metadata("source", find_in_info(&info, "source").unwrap())
+                        .unwrap()
+                        .metadata("status", find_in_info(&info, "status").unwrap())
+                        .unwrap()
+                        .add_cover_image(cover, cover_bytes.as_slice(), cover_mimetype)
+                        .unwrap();
 
                     unimplemented!()
                 }
