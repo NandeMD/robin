@@ -130,7 +130,6 @@ impl Novel for NovelFullCom {
 
     async fn get_cover(&self) -> anyhow::Result<(String, Vec<u8>)> {
         let cover_selector = Selector::parse(".book > img:nth-child(1)").unwrap();
-        let cover_element = self.data.select(&cover_selector).next().unwrap();
         let cover_src = format!(
             "{BASE_URL}{}",
             self.data
@@ -140,8 +139,6 @@ impl Novel for NovelFullCom {
                 .attr("data-cfsrc")
                 .unwrap_or_default()
         );
-
-        println!("{cover_src}");
 
         let cover_url_ext = cover_src.split(".").last().unwrap();
         let cover_resp = self.client.get(&cover_src).send().await?;
