@@ -18,7 +18,7 @@ You can get the latest features by compiling yourself.
 1. Clone the repository.
     ```bash
     git clone https://github.com/NandeMD/robin.git
-    ``` 
+    ```
 2. Change into directory.
     ```bash
     cd robin
@@ -61,8 +61,8 @@ See [SITES.md](https://github.com/NandeMD/robin/blob/main/SITES.md).
 
 # Goals
 - [X] Add an option to manga command to select a chapter while downloading.
-- [ ] Add support (new command) for downloading webnovels.
-- [ ] Add a command option to webnovel command that converts the downloaded files to ePub format.
+- [X] Add support (new command) for downloading webnovels.
+- [X] Add a command option to webnovel command that converts the downloaded files to ePub format.
+- [X] Add proxy option.
 - [ ] Add at least 10 English content websites for manga.
 - [ ] Add at least 10 English content websites for webnovel.
-- [X] Add proxy option.
