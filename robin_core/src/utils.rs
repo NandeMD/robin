@@ -1,5 +1,7 @@
 use pbr::ProgressBar;
 
+pub const INT_FLOAT_REGEX: &str = r"[-+]?(?:\d*\.*\d+)";
+
 pub fn capitalize(s: &str) -> String {
     let mut c = s.chars();
     match c.next() {

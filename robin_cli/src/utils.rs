@@ -15,3 +15,9 @@ pub fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> anyhow::Res
     }
     Ok(())
 }
+
+pub fn find_in_info(info: &Vec<(String, String)>, target: &str) -> Option<String> {
+    info.iter()
+        .find(|(key, _)| key == &target)
+        .map(|(_, value)| value.clone())
+}

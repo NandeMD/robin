@@ -20,15 +20,19 @@ pub struct ShijieTurkish {
 }
 
 impl Serie for ShijieTurkish {
-    async fn new(url: String) -> anyhow::Result<ShijieTurkish> {
-        let client = ClientBuilder::new()
+    async fn new(url: String, proxy: String) -> anyhow::Result<ShijieTurkish> {
+        let mut client = ClientBuilder::new()
             .connection_verbose(true)
             .cookie_store(true)
             .deflate(true)
             .gzip(true)
-            .brotli(true)
-            .build()
-            .unwrap();
+            .brotli(true);
+
+        if !proxy.is_empty() {
+            client = client.proxy(reqwest::Proxy::all(proxy)?);
+        }
+
+        let client = client.build()?;
 
         let page = client.get(&url).send().await?;
         let data = Html::parse_document(page.text().await?.as_str());

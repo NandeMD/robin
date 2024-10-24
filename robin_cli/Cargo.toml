@@ -7,7 +7,7 @@ repository = "https://github.com/NandeMD/robin"
 license-file = "../LICENSE"
 keywords = ["manga", "downloader", "cli"]
 categories = ["command-line-interface"]
-version = "0.1.1"
+version = "0.3.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -19,6 +19,8 @@ robin_cli_core = { path = "../robin_core", version = "0.1.0" }
 tokio = { version = "1.37.0", features = ["full"] }
 walkdir = "2.5.0"
 zip = "0.6"
+epub-builder = "0.7.4"
+natord = "1.0.9"
 
 [[bin]]
 name = "robin"
